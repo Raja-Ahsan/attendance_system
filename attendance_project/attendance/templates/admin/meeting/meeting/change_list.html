@@ -1,0 +1,67 @@
+{% extends "admin/change_list.html" %}
+
+{% block content %}
+<form method="get" id="meeting-filter-form" style="margin-bottom: 1em;">
+  
+  <!-- Employee Filter -->
+  <label for="employee_filter">Filter by Employee:</label>
+  <select id="employee_filter">
+    <option value="" {% if not selected_employee %}selected{% endif %}>All Employees</option>
+    {% for emp in employees %}
+      <option value="{{ emp.id }}" {% if emp.id|stringformat:"s" == selected_employee|stringformat:"s" %}selected{% endif %}>
+        {{ emp.name }} ({{ emp.employee_id }})
+      </option>
+    {% endfor %}
+  </select>
+
+  <!-- Date Filter -->
+  <label for="date_filter" style="margin-left: 1em;">Filter by Date:</label>
+  <input type="date" id="date_filter" value="{{ selected_date }}">
+
+  <!-- Preserve other GET parameters -->
+  {% for key, value in request.GET.items %}
+    {% if key != 'employee__id__exact' and key != 'started_at__date' %}
+      <input type="hidden" name="{{ key }}" value="{{ value }}">
+    {% endif %}
+  {% endfor %}
+</form>
+
+<script>
+function onFiltersChange() {
+  const form = document.getElementById('meeting-filter-form');
+  const employeeSelect = document.getElementById('employee_filter');
+  const dateInput = document.getElementById('date_filter');
+
+  // Remove existing filter inputs
+  ['employee__id__exact', 'started_at__date'].forEach(param => {
+    const existing = form.querySelector(`input[name="${param}"]`);
+    if (existing) existing.remove();
+  });
+
+  // Add selected employee
+  if (employeeSelect.value) {
+    const empInput = document.createElement('input');
+    empInput.type = 'hidden';
+    empInput.name = 'employee__id__exact';
+    empInput.value = employeeSelect.value;
+    form.appendChild(empInput);
+  }
+
+  // Add selected date
+  if (dateInput.value) {
+    const dateHidden = document.createElement('input');
+    dateHidden.type = 'hidden';
+    dateHidden.name = 'started_at__date';
+    dateHidden.value = dateInput.value;
+    form.appendChild(dateHidden);
+  }
+
+  form.submit();
+}
+
+document.getElementById('employee_filter').addEventListener('change', onFiltersChange);
+document.getElementById('date_filter').addEventListener('change', onFiltersChange);
+</script>
+
+{{ block.super }}
+{% endblock %}

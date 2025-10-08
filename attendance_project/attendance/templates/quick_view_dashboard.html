@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Quick View Dashboard</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-image: radial-gradient(circle, #000227, #2E0043, rgb(2, 8, 21));
+      background-size: 200% 200%; /* bigger so animation has room */
+      animation: gradient-shift 10s linear infinite;
+      color: white;
+    }
+
+    @keyframes gradient-shift {
+        0% {
+            background-position: 0% 50%;
+        }
+        50% {
+            background-position: 100% 50%;
+        }
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    main {
+      padding: 40px 20px;
+      max-width: 1400px;
+      margin: auto;
+    }
+
+    h1 {
+      text-align: center;
+      color: #ffffff;
+      margin-bottom: 20px;
+    }
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px; /* 👈 Key to spacing between cards */
+  margin-bottom: 30px;
+}
+
+
+
+
+
+.card {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-sizing: border-box; /* 👈 Ensure padding doesn't overflow */
+}
+
+
+    .card:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .card.active {
+      border: 2px solid #FFD700;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .card h2 {
+      margin: 0;
+      font-size: 2rem;
+      color: #fff;
+    }
+
+    .card p {
+      margin: 8px 0 0;
+      font-size: 14px;
+      color: #aaa;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      text-align: center;
+    }
+
+    thead {
+      background-color: #111;
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    tbody tr:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .birthday {
+      color: gold;
+      font-weight: bold;
+    }
+
+    #departmentFilter {
+      padding: 8px;
+      border-radius: 5px;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Quick View Dashboard</h1>
+
+  <div style="margin: 20px 0; text-align:center;">
+    <label for="departmentFilter">Filter by Department: </label>
+    <select id="departmentFilter">
+      <option value="all">All</option>
+    </select>
+  </div>
+
+  <div class="stats">
+    <div class="card active" data-status="all"><h2 id="totalEmployees">0</h2><p>Total Employees</p></div>
+    <div class="card" data-status="present"><h2 id="present">0</h2><p>Present</p></div>
+    <div class="card" data-status="absent"><h2 id="absent">0</h2><p>Absent</p></div>
+    <div class="card" data-status="onBreak"><h2 id="onBreak">0</h2><p>On Break</p></div>
+    <div class="card" data-status="onLeave"><h2 id="onLeave">0</h2><p>On Leave</p></div>
+    <div class="card" data-status="weekend"><h2 id="weekend">0</h2><p>Weekend</p></div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>User-ID</th>
+        <th>Name</th>
+        <th>Department</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="employeeList"></tbody>
+  </table>
+</main>
+
+<script>
+  const employeeList = document.getElementById("employeeList");
+  const stats = {
+    total: document.getElementById("totalEmployees"),
+    present: document.getElementById("present"),
+    absent: document.getElementById("absent"),
+    onBreak: document.getElementById("onBreak"),
+    onLeave: document.getElementById("onLeave"),
+    weekend: document.getElementById("weekend"),
+  };
+
+  const employees = {};
+  const departmentFilter = document.getElementById("departmentFilter");
+  let selectedStatus = "all";
+
+  function isTodayTimestamp(timestamp) {
+    if (!timestamp) return false;
+    const ts = new Date(timestamp);
+    const now = new Date();
+
+    const dayStart = new Date(now);
+    dayStart.setHours(12, 0, 0, 0);
+
+    const nextDayStart = new Date(dayStart);
+    nextDayStart.setDate(dayStart.getDate() + 1);
+
+    if (now < dayStart) {
+      dayStart.setDate(dayStart.getDate() - 1);
+      nextDayStart.setDate(nextDayStart.getDate() - 1);
+    }
+
+    return ts >= dayStart && ts < nextDayStart;
+  }
+
+  function getStatus(emp) {
+    if (emp.status === "leave") return "On Leave";
+    if (emp.is_weekend) return "Weekend";
+
+    if (isTodayTimestamp(emp.check_in)) {
+      if (isTodayTimestamp(emp.break_start) && !isTodayTimestamp(emp.break_end)) {
+        return "On Break";
+      }
+      return "Present";
+    }
+
+    return "Absent";
+  }
+
+  function renderStats() {
+    const selectedDept = departmentFilter.value;
+    const all = Object.values(employees).filter(e => selectedDept === "all" || e.department === selectedDept);
+
+    const present = all.filter(e => {
+      const status = getStatus(e);
+      return status === "Present" || status === "On Break";
+    }).length;
+
+    const onBreak = all.filter(e => getStatus(e) === "On Break").length;
+    const absent = all.filter(e => getStatus(e) === "Absent").length;
+    const onLeave = all.filter(e => getStatus(e) === "On Leave").length;
+    const weekend = all.filter(e => getStatus(e) === "Weekend").length;
+
+    stats.total.textContent = all.length;
+    stats.present.textContent = present;
+    stats.absent.textContent = absent;
+    stats.onBreak.textContent = onBreak;
+    stats.onLeave.textContent = onLeave;
+    stats.weekend.textContent = weekend;
+  }
+
+  function populateDepartmentFilter() {
+    const depts = Array.from(new Set(Object.values(employees).map(e => e.department))).sort();
+    departmentFilter.innerHTML = `<option value="all">All</option>`;
+    depts.forEach(dep => {
+      const option = document.createElement("option");
+      option.value = dep;
+      option.textContent = dep;
+      departmentFilter.appendChild(option);
+    });
+  }
+
+  function renderTable() {
+    employeeList.innerHTML = "";
+    const todayStr = new Date().toISOString().slice(5, 10);
+    const selectedDept = departmentFilter.value;
+
+    const filtered = Object.values(employees).filter(emp => {
+      const matchesDept = selectedDept === "all" || emp.department === selectedDept;
+      const status = getStatus(emp);
+      const normalizedStatus = status.replace(/\s/g, '').toLowerCase();
+
+      const matchesStatus =
+        selectedStatus === "all" ||
+        (selectedStatus === "present" && (normalizedStatus === "present" || normalizedStatus === "onbreak")) ||
+        normalizedStatus === selectedStatus.toLowerCase();
+
+      return matchesDept && matchesStatus;
+    });
+
+
+    filtered.sort((a, b) => {
+      const aBirthday = a.birthday && a.birthday.slice(5, 10) === todayStr;
+      const bBirthday = b.birthday && b.birthday.slice(5, 10) === todayStr;
+      if (aBirthday && !bBirthday) return -1;
+      if (!aBirthday && bBirthday) return 1;
+      return a.name.localeCompare(b.name);
+    });
+
+    filtered.forEach(emp => {
+      const tr = document.createElement("tr");
+      const status = getStatus(emp);
+      const isBirthday = emp.birthday && emp.birthday.slice(5, 10) === todayStr;
+
+      const cols = [
+        emp.employee_id || "-",
+        isBirthday ? `🎂 ${emp.name}` : emp.name,
+        emp.department || "-",
+        status,
+      ];
+
+      cols.forEach((val, idx) => {
+        const td = document.createElement("td");
+        td.textContent = val;
+        if (idx === 1 && isBirthday) td.classList.add("birthday");
+        tr.appendChild(td);
+      });
+
+      employeeList.appendChild(tr);
+    });
+  }
+
+  // Injected from Django context
+  const initialEmployees = JSON.parse('{{ employees_json|escapejs }}');
+  initialEmployees.forEach(emp => {
+    employees[emp.employee_id] = emp;
+  });
+
+  populateDepartmentFilter();
+  renderStats();
+  renderTable();
+
+  function connectWebSocket() {
+    const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+    const socket = new WebSocket(protocol + window.location.host + "/ws/admin-dashboard/");
+
+    socket.onmessage = function (event) {
+      try {
+        const data = JSON.parse(event.data);
+        const id = data.employee_id;
+
+        if (!employees[id]) {
+          employees[id] = {
+            employee_id: id,
+            name: data.employee,
+            department: data.department,
+            birthday: data.birthday,
+            status: null,
+            check_in: null,
+            check_out: null,
+            break_start: null,
+            break_end: null,
+            is_weekend: false,
+          };
+        }
+
+        const emp = employees[id];
+
+        switch (data.action) {
+          case "check_in":
+            emp.check_in = data.check_in;
+            emp.check_out = null;
+            emp.status = null;
+            emp.is_weekend = false;
+            break;
+          case "check_out":
+            emp.check_out = data.check_out;
+            break;
+          case "break_start":
+            emp.break_start = data.time;
+            emp.break_end = null;
+            break;
+          case "break_end":
+            emp.break_end = data.time;
+            break;
+          case "leave":
+            emp.status = "leave";
+            break;
+          case "weekend":
+            emp.is_weekend = data.is_weekend;
+            break;
+        }
+
+        populateDepartmentFilter();
+        renderStats();
+        renderTable();
+      } catch (err) {
+        console.error("WebSocket error:", err);
+      }
+    };
+
+    socket.onclose = () => setTimeout(connectWebSocket, 3000);
+    socket.onerror = (err) => {
+      console.error("WebSocket failure:", err);
+      socket.close();
+    };
+  }
+
+  connectWebSocket();
+
+  departmentFilter.addEventListener("change", () => {
+    renderStats();
+    renderTable();
+  });
+
+  document.querySelectorAll(".card").forEach(card => {
+    card.addEventListener("click", () => {
+      document.querySelectorAll(".card").forEach(c => c.classList.remove("active"));
+      card.classList.add("active");
+      selectedStatus = card.dataset.status;
+      renderTable();
+    });
+  });
+</script>
+</body>
+</html>

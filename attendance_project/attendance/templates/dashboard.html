@@ -1,0 +1,165 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Employee Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+  <style>
+    /* Page base (matches your admin design) */
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: radial-gradient(circle, #000227, #2e0043, rgb(2, 8, 21));
+      background-size: 200% 200%; /* bigger so animation has room */
+      animation: gradient-shift 10s linear infinite;
+      color: white;
+    }
+
+    @keyframes gradient-shift {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+    .header {
+      background-color: rgba(0, 0, 0, 0.4);
+      padding: 20px;
+      text-align: center;
+      font-size: 24px;
+    }
+
+    .container {
+      display: flex;
+      height: calc(100vh - 70px);
+    }
+
+    /* Sidebar (same vibe as admin) */
+    .sidebar {
+      width: 240px;
+      background-color: rgba(0, 0, 0, 0.2);
+      padding: 20px;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+
+    .sidebar h3 {
+      margin-top: 20px;
+      margin-bottom: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    /* === the same sidebar submenu styling you used === */
+    .menu-toggle {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 16px;
+      margin-top: 20px;
+      color: rgba(255, 255, 255, 0.8);
+      transition: color 0.3s ease;
+    }
+    .menu-toggle:hover { color: #fff; }
+    .menu-toggle .icon { transition: transform 0.3s ease; font-size: 14px; }
+
+    .submenu {
+      display: none;
+      padding-left: 16px;
+    }
+    .submenu a {
+      display: block;
+      margin: 6px 0;
+      color: rgba(255, 255, 255, 0.7);
+      text-decoration: none;
+      padding-left: 14px;
+      position: relative;
+    }
+    .submenu a::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 6px;
+      height: 6px;
+      background-color: rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+    }
+    .submenu a:hover { color: white; }
+    .submenu a.active { color: white; font-weight: bold; }
+
+    /* Main content area */
+    .main-content {
+      flex: 1;
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">Employee Panel</div>
+
+  <div class="container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <!-- Optional: Dashboard link to home -->
+      <h3 onclick="loadPage('/employee-home/')">Dashboard</h3>
+
+      <!-- History only -->
+      <h3 class="menu-toggle" onclick="toggleMenu('history')">
+        <i class="bi bi-caret-right-fill icon" id="icon-history"></i> History
+      </h3>
+      <div class="submenu" id="menu-history">
+        <a href="#" onclick="loadPage('/leave_history/')">Leave History</a>
+        <a href="#" onclick="loadPage('/attendance_history/')">Attendance History</a>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Default page inside the frame = employee home (cards) -->
+      <iframe id="content-frame" src="/employee-home/"></iframe>
+    </div>
+  </div>
+
+  <script>
+    // Load iframe content
+    function loadPage(url) {
+      document.getElementById('content-frame').src = url;
+    }
+
+    // Toggle submenu visibility + caret icon
+    function toggleMenu(menuId) {
+      const submenu = document.getElementById(`menu-${menuId}`);
+      const icon = document.getElementById(`icon-${menuId}`);
+      const isVisible = submenu.style.display === 'block';
+      submenu.style.display = isVisible ? 'none' : 'block';
+      icon.className = isVisible ? 'bi bi-caret-right-fill icon' : 'bi bi-caret-down-fill icon';
+    }
+
+    // Active link visual state
+    document.addEventListener('DOMContentLoaded', function () {
+      const links = document.querySelectorAll('.sidebar a');
+      links.forEach(link => {
+        link.addEventListener('click', function () {
+          links.forEach(l => l.classList.remove('active'));
+          this.classList.add('active');
+        });
+      });
+    });
+  </script>
+</body>
+</html>

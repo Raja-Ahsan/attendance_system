@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Attendance & Break History</title>
+  <style>
+    :root {
+      --brand: #004080;
+      --brand-dark: #003366;
+      --bg: #000227;
+      --text: #fff;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background-image: radial-gradient(circle, #000227, #2E0043, rgb(2, 8, 21));
+      margin: 0;
+      color: var(--text);
+    }
+
+    h2 {
+      color: white;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    h3 {
+      color: black;
+      margin-bottom: 20px;
+      text-align: center;
+      margin-top: -50px;
+    }
+
+    label {
+      color: white;
+    }
+
+    select, button {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background: var(--brand);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    button:hover {
+      background: var(--brand-dark);
+    }
+
+    .center-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .filter-card {
+      background: #fff;
+      padding: 28px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+      max-width: 520px;
+      text-align: center;
+    }
+
+    .filter-inline {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .helper {
+      font-size: 13px;
+      color: #666;
+      margin-top: 8px;
+    }
+
+    .page {
+      padding: 40px;
+    }
+
+    .table-container {
+      margin: 20px auto;
+      max-width: 1200px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,.1);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    thead {
+      background: var(--brand);
+      color: #fff;
+    }
+
+    th, td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #eee;
+      text-align: center;
+      color: #333;
+    }
+
+    th {
+      color: white;
+    }
+
+    tbody tr:hover {
+      background: #e6f0ff;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f9fbff;
+    }
+
+    td:nth-child(4) {
+      max-width: 300px;
+      white-space: normal;
+      word-break: break-word;
+    }
+
+    .status-on-time, .status-present, .status-approved {
+      color: #2e7d32;
+      font-weight: 600;
+    }
+
+    .status-late, .status-pending {
+      color: #d9822b;
+      font-weight: 600;
+    }
+
+    .status-half-day, .status-rejected {
+      color: #c62828;
+      font-weight: 600;
+    }
+
+    .status-absent, .status-leave {
+      color: gray;
+      font-weight: 600;
+    }
+
+    .status-completed {
+      color: #2e7d32;
+      font-weight: 600;
+    }
+
+    .status-ongoing {
+      color: #d9822b;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+{% if not selected_year or not selected_month %}
+  <!-- First load: filter in center -->
+  <div class="center-wrap">
+    <div class="filter-card">
+      <h2>Attendance History – {{ employee.name }}</h2>
+      <h3>Select Year and Month</h3>
+      <form method="get" class="filter-inline">
+        <select name="year" required>
+          <option value="">Select Year</option>
+          {% for y in available_years %}
+            <option value="{{ y }}">{{ y }}</option>
+          {% endfor %}
+        </select>
+        <select name="month" required>
+          <option value="">Select Month</option>
+          {% for num, name in months %}
+            <option value="{{ num }}">{{ name }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit">Fetch</button>
+      </form>
+      <p class="helper">Please select year and month to view attendance history.</p>
+    </div>
+  </div>
+
+{% else %}
+  <!-- After fetch: filter on top + table below -->
+  <div class="page">
+    <h2>Attendance History – {{ employee.name }}</h2>
+    <form method="get" class="filter-inline" style="justify-content:center; margin-bottom:20px;">
+      <select name="year" required>
+        <option value="">Select Year</option>
+        {% for y in available_years %}
+          <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+      <select name="month" required>
+        <option value="">Select Month</option>
+        {% for num, name in months %}
+          <option value="{{ num }}" {% if selected_month == num %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit">Fetch</button>
+    </form>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Check-In</th>
+            <th>Check-Out</th>
+            <th>Break Start</th>
+            <th>Break End</th>
+            <th>Break Status</th>
+            <th>Attendance Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for att in attendance_history %}
+          <tr>
+            <td>{{ att.date }}</td>
+            <td>{{ att.check_in|date:"M d, Y h:i A" }}</td>
+          <td>
+            {% if att.check_out %}
+              {{ att.check_out|date:"M d, Y h:i A" }}
+            {% else %}
+              -
+            {% endif %}
+          </td>
+          <td>
+            {% for b in break_history %}
+              {% if b.date == att.date %}
+                {{ b.break_start|date:"M d, Y h:i A" }}<br>
+              {% endif %}
+            {% empty %}-{% endfor %}
+          </td>
+          <td>
+            {% for b in break_history %}
+              {% if b.date == att.date %}
+                {% if b.break_end %}
+                  {{ b.break_end|date:"M d, Y h:i A" }}<br>
+                {% else %}
+                  -
+                {% endif %}
+              {% endif %}
+            {% empty %}-{% endfor %}
+          </td>
+
+            <td>
+              {% for b in break_history %}
+                {% if b.date == att.date %}
+                  <span class="{% if b.break_end %}status-completed{% else %}status-ongoing{% endif %}">
+                    {% if b.break_end %}Completed{% else %}Ongoing{% endif %}
+                  </span><br>
+                {% endif %}
+              {% empty %}-{% endfor %}
+            </td>
+            <td class="status-{{ att.status|lower|cut:' ' }}">{{ att.status|default:"-" }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7">No attendance records found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endif %}
+
+</body>
+</html>

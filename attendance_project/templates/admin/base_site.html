@@ -1,0 +1,21 @@
+{% extends "admin/base_site.html" %}
+
+{% load static %}  <!-- Load the static tag -->
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'css/custom_admin.css' %}">
+{% endblock %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <script>
+    window.addEventListener("DOMContentLoaded", function () {
+      const content = document.getElementById("content");
+      if (content) {
+        content.style.backgroundColor = "rgba(0, 0, 0, 0.2)";
+        content.style.color = "white";
+      }
+    });
+  </script>
+{% endblock %}

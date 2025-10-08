@@ -1,0 +1,35 @@
+<!--<!DOCTYPE html>-->
+<!--<html>-->
+<!--<head>-->
+<!--    <title>Leave Requests</title>-->
+<!--    <style>-->
+<!--        body { font-family: Arial; background: #f4f4f4; padding: 20px; }-->
+<!--        .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; }-->
+<!--    </style>-->
+<!--</head>-->
+<!--<body>-->
+<!--    <h2>Pending Leave Requests</h2>-->
+<!--    {% for leave in leaves %}-->
+<!--    <div class="card">-->
+<!--        <p><strong>{{ leave.employee.name }}</strong> ({{ leave.employee.employee_id }})</p>-->
+<!--        <p>Reason: {{ leave.reason }}</p>-->
+
+<!--        <form method="post" action="{% url 'leave_action' %}">-->
+<!--            {% csrf_token %}-->
+<!--            <input type="hidden" name="leave_id" value="{{ leave.id }}">-->
+<!--            <label><input type="radio" name="leave_type" value="single" checked> Single Day</label>-->
+<!--            <input type="date" name="start_date" required>-->
+<!--            <br>-->
+<!--            <label><input type="radio" name="leave_type" value="multi"> Multi Day</label>-->
+<!--            <input type="date" name="start_date">-->
+<!--            <input type="date" name="end_date">-->
+<!--            <br><br>-->
+<!--            <button name="action" value="Approve">Approve</button>-->
+<!--            <button name="action" value="Reject">Reject</button>-->
+<!--        </form>-->
+<!--    </div>-->
+<!--    {% empty %}-->
+<!--        <p>No pending leave requests.</p>-->
+<!--    {% endfor %}-->
+<!--</body>-->
+<!--</html>-->

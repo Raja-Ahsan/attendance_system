@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Employee Login</title>
+  <style>
+    body {
+      background-image: radial-gradient(circle, #000227, #2e0043, rgb(2, 8, 21));
+      background-size: 200% 200%; /* bigger so animation has room */
+      animation: gradient-shift 10s linear infinite;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    @keyframes gradient-shift {
+        0% {
+            background-position: 0% 50%;
+        }
+        50% {
+            background-position: 100% 50%;
+        }
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    .login-container {
+      background-color: rgba(0, 0, 0, 0.2); !important;
+      padding: 30px 40px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      text-align: center;
+      width: 300px;
+
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: white;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 20px;
+      color: white;
+    }
+
+   input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid rgba(204, 204, 204, 0.5); /* semi-transparent border */
+      border-radius: 5px;
+      margin-bottom: 20px;
+      box-sizing: border-box;
+      background-color: #1e1e2f; /* semi-transparent background */
+      color: white; /* slightly transparent text (optional) */
+}
+
+   input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid rgba(204, 204, 204, 0.5); /* semi-transparent border */
+      border-radius: 5px;
+      margin-bottom: 20px;
+      box-sizing: border-box;
+      background-color: #1e1e2f; /* semi-transparent background */
+      color: white;
+}
+
+
+    button {
+      background-color: #3a005a;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 1rem;
+      cursor: pointer;
+      width: 100%;
+      font-size: 16px;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background-color: #5c0099;
+    }
+
+    .error-message {
+      color: red;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h2>Employee Login</h2>
+    <form method="POST">
+  {% csrf_token %}
+  <label for="employee_id">Employee ID:</label>
+  <input type="text" name="employee_id" id="employee_id" required>
+
+  <label for="password">Password:</label>
+  <input type="password" name="password" id="password" required>
+
+  <button type="submit">Login</button>
+</form>
+    {% if error %}
+      <p class="error-message">{{ error }}</p>
+
+    {% endif %}
+  </div>
+</body>
+</html>

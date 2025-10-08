@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet"> <!-- Flatpickr CSS -->
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-image: radial-gradient(circle, #000227, #2E0043, rgb(2, 8, 21));
+            background-size: 200% 200%; /* bigger so animation has room */
+            animation: gradient-shift 10s linear infinite;
+            margin: 0;
+            padding: 30px;
+            color: #fff;
+        }
+
+        @keyframes gradient-shift {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        h2 {
+            text-align: center;
+            color: #ffffff;
+        }
+
+        .dashboard-container {
+            max-width: 900px;
+            margin: auto;
+        }
+
+        .employee-id {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 20px 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .card h3 {
+            margin-top: 0;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            color: white;
+        }
+
+        .card h3 i {
+            margin-right: 8px;
+            color: #ffffff;
+        }
+
+        .status {
+            margin-top: 10px;
+            color: #28a745;
+        }
+
+        .status.danger {
+            color: #dc3545;
+        }
+
+        .status.success {
+            color: #28a745;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            font-size: 13px;
+            border-radius: 12px;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        .status-late {
+            background-color: #f8d7da;
+            color: #dc3545;
+        }
+
+        .status-on-time {
+            background-color: #d4edda;
+            color: #28a745;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background-color: #3b5bdb;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover,
+        .btn-danger:hover {
+            opacity: 0.9;
+        }
+
+        textarea,
+        select,
+        input[type="date"] {
+            background-color: rgba(255, 255, 255, 0.9);
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            resize: vertical;
+        }
+
+        #leave-form {
+            display: none;
+        }
+
+        #history-options {
+            display: none;
+            margin-top: 15px;
+        }
+
+        form {
+            margin-top: 10px;
+        }
+
+
+    </style>
+</head>
+<body>
+
+{% if is_remote %}
+    <div class="attendance-actions">
+        {% if can_checkin %}
+            <form method="post" action="{% url 'remote_checkin' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary">Check In</button>
+            </form>
+        {% elif can_checkout %}
+            <form method="post" action="{% url 'remote_checkout' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Check Out</button>
+            </form>
+        {% else %}
+            <p>{{ status_message }}</p>
+        {% endif %}
+    </div>
+{% endif %}
+
+
+
+
+    <div class="dashboard-container">
+        <h2>Welcome, {{ employee.name }}</h2>
+        <div class="employee-id">Employee ID: {{ employee.employee_id }}</div>
+
+        <!-- Attendance -->
+        <div class="card">
+            <h3><i class="fa fa-calendar-check"></i> Today's Attendance</h3>
+            <hr>
+            {% if status == "Leave" %}
+                <div class="status success">
+                    <i class="fa fa-plane-departure"></i> Leave Approved for Today
+                </div>
+            {% elif attendance.check_in %}
+                <div class="status success">
+                    <i class="fa fa-sign-in-alt"></i> Checked In: {{ attendance.check_in }}
+                    {% if status == "Late" %}
+                        <span class="status-badge status-late">Late</span>
+                    {% elif status == "On Time" %}
+                        <span class="status-badge status-on-time">On Time</span>
+                    {% else %}
+                        <span class="status-badge status-half-day">Half Day</span>
+                    {% endif %}
+                </div>
+                {% if attendance.check_out %}
+                    <div class="status success">
+                        <i class="fa fa-sign-out-alt"></i> Checked Out: {{ attendance.check_out }}
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="status danger"><i class="fa fa-ban"></i> Not Checked In</div>
+            {% endif %}
+        </div>
+
+
+        <div class="card">
+            <h3><i class="fa fa-mug-hot"></i> Break Status</h3>
+            <hr>
+            {% if attendance.check_out %}
+                <div class="status danger"><i class="fa fa-ban"></i> You have already checked out. Breaks are not allowed.</div>
+            {% else %}
+                {% if break %}
+                    {% if break.break_start %}
+                        <div class="status success">✔ Break Started at {{ break.break_start }}</div>
+                        {% if break.break_end %}
+                            <div class="status success">✔ Break Ended at {{ break.break_end }}</div>
+                            <form method="post" action="/start_break/">{% csrf_token %}
+                                <button class="btn-primary" type="submit">Start Break</button>
+                            </form>
+                        {% else %}
+                            <form method="post" action="/end_break/">{% csrf_token %}
+                                <button class="btn-danger" type="submit">Stop Break</button>
+                            </form>
+                        {% endif %}
+                    {% endif %}
+                {% else %}
+                    <div class="status danger"><i class="fa fa-ban"></i> No Break Started</div>
+                    <form method="post" action="/start_break/">{% csrf_token %}
+                        <button class="btn-primary" type="submit">Start Break</button>
+                    </form>
+                {% endif %}
+            {% endif %}
+        </div>
+
+
+<!-- Leave Request Form -->
+<div class="card">
+    <h3><i class="fa fa-paper-plane"></i> Leave Request</h3>
+    <hr>
+
+    <!-- Toggle button placed OUTSIDE the form -->
+    <button type="button" class="btn-danger" onclick="toggleLeaveForm()">Request Leave</button>
+
+    <form method="post" action="/request_leave/" id="leave-form" style="display:none;">
+        {% csrf_token %}
+        <p><strong>Total Leave Balance: <span id="total-leave-balance">{{ total_leave_balance }}</span></strong></p>
+
+        <label for="start_date">Start Date:</label>
+        <input type="text" id="start_date" name="start_date" required>
+
+        <label for="end_date">End Date:</label>
+        <input type="text" id="end_date" name="end_date" required>
+
+        <label for="reason">Reason for Leave:</label>
+        <textarea id="reason" name="reason" rows="3" required></textarea>
+
+        <!-- Submit button for actual request -->
+        <button class="btn-danger" type="submit">Send Request</button>
+        <div id="leave-response" style="margin-top: 10px; padding: 10px; border-radius: 6px; display:none;"></div>
+    </form>
+</div>
+
+<!-- Meeting Section -->
+<div class="card" id="meeting-card">
+    <h3><i class="fa fa-handshake"></i> Meetings</h3>
+    <hr>
+
+    <!-- Active Meeting Info -->
+    <div id="active-meeting" style="display: none;">
+        <p><strong>Active Meeting Details:</strong></p>
+        <p>Floor: <span id="meeting-floor"></span></p>
+        <p>Purpose: <span id="meeting-purpose"></span></p>
+        <p>Person Name: <span id="meeting-person-name"></span></p>
+        <p>Started At: <span id="meeting-started-at"></span></p>
+        <button class="btn-danger" id="end-meeting-btn">End Meeting</button>
+    </div>
+
+    <!-- Start Meeting Button -->
+    <button class="btn-primary" id="toggle-meeting-form-btn">Start Meeting</button>
+
+    <!-- Form to Start Meeting -->
+    <div id="start-meeting-form" style="display: none; margin-top: 15px;">
+        <label for="meeting-floor-select">Floor:</label>
+        <select id="meeting-floor-select" required>
+            <option value="" disabled selected>Select Floor</option>
+            <option value="1">Floor 1</option>
+            <option value="2">Floor 2</option>
+            <option value="3">Floor 3</option>
+            <option value="4">Floor 4</option>
+        </select>
+
+        <label for="meeting-purpose-input">Purpose:</label>
+        <input type="text" id="meeting-purpose-input" placeholder="Enter purpose" required>
+
+        <label for="meeting-person-name-input">Person Name:</label>
+        <input type="text" id="meeting-person-name-input" placeholder="Enter person name" required>
+
+        <button class="btn-success" id="start-meeting-btn" style="margin-top: 10px;">Submit</button>
+    </div>
+
+    <!-- Message Display -->
+    <div id="meeting-response" style="margin-top: 15px; color: #fff;"></div>
+</div>
+
+<!-- Meeting JS Logic -->
+<script>
+    const employeeId = "{{ employee.employee_id|escapejs }}";
+    const csrfToken = "{{ csrf_token }}";
+
+    const activeMeetingDiv = document.getElementById('active-meeting');
+    const startMeetingFormDiv = document.getElementById('start-meeting-form');
+    const meetingResponseDiv = document.getElementById('meeting-response');
+
+    const meetingFloorSpan = document.getElementById('meeting-floor');
+    const meetingPurposeSpan = document.getElementById('meeting-purpose');
+    const meetingPersonNameSpan = document.getElementById('meeting-person-name');
+    const meetingStartedAtSpan = document.getElementById('meeting-started-at');
+
+    const endMeetingBtn = document.getElementById('end-meeting-btn');
+    const startMeetingBtn = document.getElementById('start-meeting-btn');
+    const toggleFormBtn = document.getElementById('toggle-meeting-form-btn');
+
+    let activeMeetingId = null;
+
+    function formatDateTime(dtStr) {
+        const dt = new Date(dtStr);
+        return dt.toLocaleString();
+    }
+
+    async function fetchActiveMeeting() {
+        try {
+            const response = await fetch(`/api/active_meeting/?employee_id=${employeeId}`);
+            const data = await response.json();
+            if (data.active_meeting) {
+                activeMeetingId = data.active_meeting.id;
+                meetingFloorSpan.textContent = data.active_meeting.floor;
+                meetingPurposeSpan.textContent = data.active_meeting.purpose;
+                meetingPersonNameSpan.textContent = data.active_meeting.person_name;
+                meetingStartedAtSpan.textContent = formatDateTime(data.active_meeting.started_at);
+
+                activeMeetingDiv.style.display = 'block';
+                toggleFormBtn.style.display = 'none';
+                startMeetingFormDiv.style.display = 'none';
+            } else {
+                activeMeetingDiv.style.display = 'none';
+                toggleFormBtn.style.display = 'inline-block';
+                startMeetingFormDiv.style.display = 'none';
+            }
+        } catch (error) {
+            meetingResponseDiv.style.color = 'red';
+            meetingResponseDiv.textContent = 'Error fetching active meeting.';
+        }
+    }
+
+    toggleFormBtn.addEventListener('click', () => {
+        if (startMeetingFormDiv.style.display === 'none') {
+            startMeetingFormDiv.style.display = 'block';
+            toggleFormBtn.textContent = 'Cancel';
+        } else {
+            startMeetingFormDiv.style.display = 'none';
+            toggleFormBtn.textContent = 'Start Meeting';
+            meetingResponseDiv.textContent = '';
+            document.getElementById('meeting-floor-select').value = '';
+            document.getElementById('meeting-purpose-input').value = '';
+            document.getElementById('meeting-person-name-input').value = '';
+        }
+    });
+
+    startMeetingBtn.addEventListener('click', async () => {
+        const floor = document.getElementById('meeting-floor-select').value;
+        const purpose = document.getElementById('meeting-purpose-input').value.trim();
+        const personName = document.getElementById('meeting-person-name-input').value.trim();
+
+        if (!floor || !purpose || !personName) {
+            meetingResponseDiv.style.color = 'red';
+            meetingResponseDiv.textContent = 'Please fill in all fields.';
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('floor', floor);
+        formData.append('purpose', purpose);
+        formData.append('person_name', personName);
+        formData.append('employee_id', employeeId);
+
+        try {
+            const response = await fetch('/start_meeting/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'started') {
+                activeMeetingId = data.meeting_id;
+                meetingResponseDiv.style.color = 'lightgreen';
+                meetingResponseDiv.textContent = 'Meeting started successfully!';
+
+                meetingFloorSpan.textContent = floor;
+                meetingPurposeSpan.textContent = purpose;
+                meetingPersonNameSpan.textContent = personName;
+                meetingStartedAtSpan.textContent = formatDateTime(new Date());
+
+                activeMeetingDiv.style.display = 'block';
+                toggleFormBtn.style.display = 'none';
+                startMeetingFormDiv.style.display = 'none';
+            } else {
+                meetingResponseDiv.style.color = 'red';
+                meetingResponseDiv.textContent = data.message || 'Failed to start meeting.';
+            }
+        } catch (error) {
+            meetingResponseDiv.style.color = 'red';
+            meetingResponseDiv.textContent = 'Error starting meeting.';
+        }
+    });
+
+    endMeetingBtn.addEventListener('click', async () => {
+        if (!activeMeetingId) return;
+
+        const formData = new FormData();
+        formData.append('employee_id', employeeId);
+
+        try {
+            const response = await fetch('/end_meeting/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'ended') {
+                meetingResponseDiv.style.color = 'lightgreen';
+                meetingResponseDiv.textContent = 'Meeting ended successfully!';
+                activeMeetingDiv.style.display = 'none';
+                toggleFormBtn.style.display = 'inline-block';
+                toggleFormBtn.textContent = 'Start Meeting';
+                activeMeetingId = null;
+            } else {
+                meetingResponseDiv.style.color = 'red';
+                meetingResponseDiv.textContent = data.message || 'Failed to end meeting.';
+            }
+        } catch (error) {
+            meetingResponseDiv.style.color = 'red';
+            meetingResponseDiv.textContent = 'Error ending meeting.';
+        }
+    });
+
+    // ✅ Run on page load
+    window.onload = fetchActiveMeeting;
+</script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script> <!-- Flatpickr JS -->
+        <!-- This will embed leave_balances as safe JSON in the page -->
+{{ leave_balances|json_script:"leave-balances" }}
+
+<script>
+    function toggleLeaveForm() {
+        const form = document.getElementById("leave-form");
+        form.style.display = form.style.display === "none" ? "block" : "none";
+    }
+
+    function toggleHistoryOptions() {
+        const options = document.getElementById("history-options");
+        options.style.display = options.style.display === "none" ? "block" : "none";
+    }
+
+
+
+
+    // Flatpickr setup
+    flatpickr("#start_date", {
+        dateFormat: "Y-m-d",
+        minDate: "today",
+        allowInput: true
+    });
+
+    flatpickr("#end_date", {
+        dateFormat: "Y-m-d",
+        minDate: "today",
+        allowInput: true
+    });
+
+    document.getElementById('leave-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const form = e.target;
+        const formData = new FormData(form);
+        const csrfToken = form.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+                body: formData,
+            });
+
+            const text = await response.text();
+
+            if (response.ok) {
+                showModal('Leave request submitted!', text, true);
+                form.reset();
+                form.style.display = 'none';
+            } else {
+                showModal('Error', text, false);
+            }
+        } catch (error) {
+            showModal('Error', 'An error occurred. Please try again.', false);
+        }
+    });
+
+    function showModal(title, message, isSuccess = true) {
+        const modal = document.getElementById('response-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const modalIcon = document.getElementById('modal-icon');
+
+        modalTitle.textContent = title;
+        modalMessage.textContent = message;
+
+        if (isSuccess) {
+            modalIcon.innerHTML = '<i class="fa fa-check-circle"></i>';
+            modalIcon.style.color = '#28a745';
+        } else {
+            modalIcon.innerHTML = '<i class="fa fa-times-circle"></i>';
+            modalIcon.style.color = '#dc3545';
+        }
+
+        modal.style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('response-modal').style.display = 'none';
+    }
+</script>
+
+<!-- Modal -->
+<div id="response-modal" style="
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(5px);
+    justify-content: center;
+    align-items: center;
+">
+    <div style="
+        background: white;
+        color: #333;
+        border-radius: 12px;
+        max-width: 400px;
+        padding: 30px 40px;
+        text-align: center;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.25);
+        position: relative;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    ">
+        <div id="modal-icon" style="font-size: 50px; color: #28a745; margin-bottom: 20px;">
+            <i class="fa fa-check-circle"></i>
+        </div>
+        <h2 id="modal-title" style="margin-bottom: 10px;">Leave request submitted!</h2>
+        <p id="modal-message" style="color: #555;">Leave request submitted successfully.</p>
+        <button onclick="closeModal()" style="
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 25px;
+            width: 100%;
+        ">OK</button>
+    </div>
+</div>
+
+</body>
+</html>

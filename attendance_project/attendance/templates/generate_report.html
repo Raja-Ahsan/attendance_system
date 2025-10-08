@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate Attendance Report</title>
+    <style>
+        body {
+            background: radial-gradient(circle, #000227, #2E0043, rgb(2, 8, 21));
+            color: white;
+            font-family: Arial, sans-serif;
+            padding: 40px;
+            text-align: center;
+        }
+        .form-box {
+            background-color: rgba(255,255,255,0.05);
+            padding: 30px;
+            border-radius: 12px;
+            display: inline-block;
+            width: 50%;
+        }
+        label, select, button {
+            display: block;
+            margin: 10px auto;
+            width: 400px;
+        }
+        select, button {
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h2>View Monthly Attendance Report</h2>
+    <div class="form-box">
+        <form method="POST" action="{% url 'view_monthly_report' %}">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">View Report</button>
+        </form>
+    </div>
+</body>
+</html>

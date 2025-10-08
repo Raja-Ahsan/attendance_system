@@ -1,0 +1,305 @@
+/* ========== Global Styles ========== */
+body {
+    background-image: radial-gradient(circle, #000227, #2e0043, rgb(2, 8, 21));
+    background-size: 200% 200%; /* bigger so animation has room */
+    animation: gradient-shift 10s linear infinite;
+    font-family: 'Arial', sans-serif;
+    color: white;
+}
+
+@keyframes gradient-shift {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* ========== Layout ========== */
+#header, #nav-sidebar, .main.shifted > #nav-sidebar, .toggle-nav-sidebar,
+div.breadcrumbs, h1, #footer {
+    display: none !important;
+}
+
+#header {
+    background-color: rgba(0, 0, 0, 0.4);
+    padding: 20px;
+    font-size: 24px;
+    text-align: center;
+    border-radius: 10px;
+}
+
+
+
+.dashboard #content {
+    width: 50%;
+    background: none;
+    box-shadow: none;
+}
+
+/* ========== Dashboard Buttons ========== */
+.dashboard-button-wrapper,
+.dashboard-button-container {
+    position: absolute;
+    top: 100px;
+    right: 40px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.custom-dashboard-button,
+.custom-report-button,
+.button,
+input[type=submit],
+input[type=button],
+.submit-row input,
+a.button,
+.object-tools a.addlink {
+    background: #3a005a;
+    color: white;
+    padding: 10px 20px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transition: background 0.3s ease;
+    display: inline-block;
+    text-align: center;
+    margin-top: 50px;
+}
+
+.custom-dashboard-button:hover,
+.custom-report-button:hover,
+.button.default:hover,
+input[type=submit].default:hover,
+.submit-row input.default:hover,
+.button:hover,
+input[type=submit]:hover,
+input[type=button]:hover,
+.submit-row input:hover,
+a.button:hover {
+    background: #5c0099;
+}
+
+/* ========== Content Area Modules ========== */
+.module,
+#content-main .module {
+    background-color: rgba(0, 0, 0, 0.2) !important;
+    color: white;
+    border: none;
+    margin-bottom: 30px;
+    box-shadow: none !important;
+}
+
+#content-main table,
+#content-main table th,
+#content-main table td,
+#content-main table caption,
+#content-main table tr {
+    background-color: rgba(0, 0, 0, 0.2) !important;
+    color: #ffffff;
+    font-size: 15px;
+    border: none !important;
+    margin-bottom: 10px;
+}
+
+tr:nth-child(odd),
+tr:nth-child(even),
+.row-form-errors,
+th,
+#attendance-attendance {
+    background-color: rgba(0, 0, 0, 0.2) !important;
+    color: white;
+}
+
+/* ========== Sidebar & Related Content ========== */
+#content-related {
+    background-color: rgba(0, 0, 0, 0.3) !important;
+    color: white;
+}
+
+#content-related h2,
+#content-related h3,
+#nav-sidebar .module th,
+#nav-sidebar .module caption,
+#nav-filter,
+#site-name a:link,
+#site-name a:visited,
+a:link,
+a:visited {
+    color: white !important;
+}
+
+thead th a:hover {
+    background-color: #333 !important; /* dark gray background */
+    color: white !important;
+}
+
+
+#nav-filter {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.app-attendance.module.current-app,
+#nav-sidebar .current-model,
+#nav-sidebar .current-app .section:link,
+#nav-sidebar .current-app .section:visited {
+    background-color: rgba(0, 0, 0, 0.2) !important;
+    color: white !important;
+}
+
+/* ========== Specific Models ========== */
+.model-employee,
+.model-attendance,
+.model-leave,
+.model-break {
+    background-color: #f4f6f9;
+    border-radius: 10px;
+    padding: 10px;
+    color: #000;
+}
+
+/* ========== Form Rows & Misc ========== */
+body.popup .submit-row,
+.submit-row {
+    background-color: rgba(0, 0, 0, 0.2) !important;
+    border: none;
+}
+
+body body body #content {
+    background-color: rgba(0, 0, 0, 0.2) !important;
+}
+
+.module table {
+    margin-top: 10px;
+}
+.button.default, input[type=submit].default, .submit-row input.default {
+
+    background: #3a005a;
+}
+
+body.delete-confirmation form div {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 10px !important;
+    align-items: center !important;
+    margin-top: 20px !important;
+}
+
+body.delete-confirmation form input[type="submit"],
+body.delete-confirmation form .cancel-link {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: auto !important;
+    line-height: normal !important;
+    padding: 10px 20px !important;
+    font-size: 0.9rem !important;
+    border-radius: 4px !important;
+    margin-top: 0 !important;   /* kill the 50px margin from default */
+}
+
+#nav-sidebar + .content {
+    max-width: 100% !important;
+}
+
+body:not(.login) #content {
+    background-image: radial-gradient(circle, #000227, #2e0043, rgb(2, 8, 21)) !important;
+    padding: 20px !important;
+    border-radius: 10px !important;
+    margin-top: 20px !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+    width: 97% !important;
+    color: white ;
+}
+body.login  {
+    background-image: radial-gradient(circle, #000227, #2e0043, rgb(2, 8, 21)) !important;
+}
+
+body.login #container {
+    background-image: radial-gradient(circle, #000227, #2e0043, rgb(2, 8, 21)) !important;
+    padding: 20px !important;
+    border-radius: 10px !important;
+    border: none;
+    margin-top: 220px !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+}
+
+.submenu a:hover {
+    color: #ffcc70;
+    transform: scale(1.05);
+}
+
+input:not([type]), input[type=text], input[type=password], input[type=email], input[type=url], input[type=number], input[type=tel], textarea, select, .vTextField {
+    color: white;
+    background-color: black;
+}
+
+/* Custom success message styling */
+.messagelist li.success {
+    background-color: #089000 !important;
+    color: #ffffff !important;
+}
+
+/* Make sure the link inside is also white */
+.messagelist li.success a {
+    color: #ffffff !important;
+    text-decoration: none; /* optional */
+}
+/* Changelist actions bar */
+#changelist .actions {
+    width: 98% !important;
+    background-color: black !important;
+    color: #ffffff !important;
+}
+
+#changelist .actions select {
+    color: white !important;
+    background-color: black !important;
+}
+
+#changelist .actions .button {
+    color: white !important;
+    background-color: black !important;
+}
+
+/* Paginators */
+#changelist .paginator,
+#changelist .results + .paginator,
+.change-list .filtered .paginator {
+    color: white !important;
+    background-color: black !important;
+}
+
+/* Filtered list adjustments */
+.change-list .filtered .results,
+.filtered #toolbar,
+.filtered .actions {
+    color: white !important;
+    background-color: black !important;
+}
+
+.aligned label {
+color: white !important;
+}
+.aligned label + p, .aligned .checkbox-row + div.help, .aligned label + div.readonly {
+color: white !important;
+}
+
+
+#changelist-filter {
+    display: none !important;
+}
+#toolbar,
+#searchbar,
+#searchbar + input[type="submit"],
+label[for="searchbar"] {
+    display: none !important;
+}
+

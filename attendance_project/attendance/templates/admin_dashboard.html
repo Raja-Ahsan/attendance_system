@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Attendance Dashboard</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-image: radial-gradient(circle, #000227, #2E0043, rgb(2, 8, 21));
+      background-size: 200% 200%; /* bigger so animation has room */
+      animation: gradient-shift 10s linear infinite;
+      color: white;
+    }
+
+    @keyframes gradient-shift {
+        0% {
+            background-position: 0% 50%;
+        }
+        50% {
+            background-position: 100% 50%;
+        }
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    main {
+      padding: 40px 20px;
+      max-width: 1400px;
+      margin: auto;
+    }
+
+    h1 {
+      text-align: center;
+      color: #ffffff;
+      margin-bottom: 20px;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .date button {
+      background: transparent;
+      border: 1px solid #fff;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 5px;
+      cursor: default;
+    }
+
+    .filter label, .filter select {
+      color: white;
+      font-size: 14px;
+    }
+
+    .filter select {
+      padding: 6px 10px;
+      border-radius: 5px;
+      background-color: #111;
+      color: white;
+      border: 1px solid #fff;
+      margin-left: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    thead {
+      background-color: #111;
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    tbody tr:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Attendance Board</h1>
+
+  <div class="top-bar">
+    <div class="filter">
+      <label for="designationFilter">Filter by Department:</label>
+      <select id="designationFilter">
+        <option value="all">All</option>
+      </select>
+    </div>
+
+    <div class="date">
+      <button id="today-date">Date: </button>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>User-ID</th>
+        <th>Name</th>
+        <th>Department</th>
+        <th>Position</th>
+        <th>Check-In</th>
+        <th>Check-Out</th>
+        <th>Break-In</th>
+        <th>Break-Out</th>
+        <th>Total Break Time</th>
+        <th>Total Office Time</th>
+        <th>Total Working Hour</th>
+      </tr>
+    </thead>
+    <tbody id="attendanceBody"></tbody>
+  </table>
+</main>
+
+<script>
+  const tbody = document.getElementById("attendanceBody");
+  const todayDate = document.getElementById("today-date");
+  const designationFilter = document.getElementById("designationFilter");
+
+  const today = new Date().toISOString().split("T")[0];
+  todayDate.textContent = `Date: ${new Date().toLocaleDateString(undefined, {
+    year: 'numeric', month: 'short', day: 'numeric'
+  })}`;
+
+  const attendanceData = {};
+
+  function formatTime(timeStr) {
+    if (!timeStr) return "-";
+    const d = new Date(timeStr);
+    if (isNaN(d.getTime())) return "-";
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  }
+
+  function formatDuration(seconds) {
+    if (!seconds || seconds <= 0) return "00:00:00";
+    const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
+    const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+    const s = String(seconds % 60).padStart(2, '0');
+    return `${h}:${m}:${s}`;
+  }
+
+<!--  function calculateTotalBreakTime(breakIns, breakOuts) {-->
+<!--    if (!Array.isArray(breakIns) || !Array.isArray(breakOuts)) return 0;-->
+<!--    let total = 0;-->
+<!--    // Sum pairs only for matching pairs (assume breakIns[i] < breakOuts[i])-->
+<!--    for (let i = 0; i < Math.min(breakIns.length, breakOuts.length); i++) {-->
+<!--      const start = new Date(breakIns[i]);-->
+<!--      const end = new Date(breakOuts[i]);-->
+<!--      if (isNaN(start.getTime()) || isNaN(end.getTime())) continue;-->
+<!--      const diff = (end - start) / 1000;-->
+<!--      if (diff > 0) total += diff;-->
+<!--    }-->
+<!--    return total;-->
+<!--  }-->
+
+  function calculateTotalBreakTime(breakIns, breakOuts) {
+  if (!Array.isArray(breakIns) || !Array.isArray(breakOuts)) return 0;
+
+  // Filter out timestamps not from today and convert to Date objects
+  const ins = breakIns.filter(isTodayTimestamp).map(t => new Date(t)).sort((a, b) => a - b);
+  const outs = breakOuts.filter(isTodayTimestamp).map(t => new Date(t)).sort((a, b) => a - b);
+
+  let total = 0;
+  let i = 0, j = 0;
+
+  // Pair the break-in and break-out based on chronological order
+  while (i < ins.length && j < outs.length) {
+    const start = ins[i];
+    const end = outs[j];
+
+    if (end > start) {
+      total += (end - start) / 1000; // duration in seconds
+      i++;
+      j++;
+    } else {
+      j++; // skip invalid/out-of-order break_end
+    }
+  }
+
+  return total;
+}
+
+
+  function calculateWorkingHours(record) {
+    if (!record.check_in || !record.check_out) return "00:00:00";
+    const checkIn = new Date(record.check_in);
+    const checkOut = new Date(record.check_out);
+    if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) return "00:00:00";
+
+    const totalOfficeSec = Math.floor((checkOut - checkIn) / 1000);
+    const totalBreakSec = calculateTotalBreakTime(record.break_starts, record.break_ends);
+
+    const workSec = Math.max(totalOfficeSec - totalBreakSec, 0);
+    return formatDuration(Math.floor(workSec));
+  }
+
+  function isTodayTimestamp(timestamp) {
+  if (!timestamp) return false;
+  const ts = new Date(timestamp);
+  const now = new Date();
+
+  const dayStart = new Date(now);
+  dayStart.setHours(12, 0, 0, 0); // today at 12 PM
+
+  const nextDayStart = new Date(dayStart);
+  nextDayStart.setDate(dayStart.getDate() + 1); // tomorrow at 12 PM
+
+  // If current time is before 12 PM, today starts from yesterday 12 PM
+  if (now < dayStart) {
+    dayStart.setDate(dayStart.getDate() - 1);
+    nextDayStart.setDate(nextDayStart.getDate() - 1);
+  }
+
+  return ts >= dayStart && ts < nextDayStart;
+}
+
+
+function populateDesignationFilter() {
+  const designations = new Set(
+    Object.values(attendanceData)
+      .filter(rec => rec.check_in && isTodayTimestamp(rec.check_in))
+      .map(rec => rec.designation)
+  );
+
+  designationFilter.innerHTML = `<option value="all">All</option>`;
+  designations.forEach(d => {
+    if (d) {
+      const opt = document.createElement("option");
+      opt.value = d;
+      opt.textContent = d;
+      designationFilter.appendChild(opt);
+    }
+  });
+}
+
+
+function updateTable() {
+  tbody.innerHTML = "";
+  const selected = designationFilter.value;
+  let hasData = false;
+
+  // Convert object to array and filter today's records
+  const todayRecords = Object.values(attendanceData)
+    .filter(record => record.check_in && isTodayTimestamp(record.check_in))
+    .filter(record => selected === "all" || record.designation === selected);
+
+  // Sort by latest check-in time (descending)
+  todayRecords.sort((a, b) => new Date(b.check_in) - new Date(a.check_in));
+
+  todayRecords.forEach(record => {
+    // Format break-ins and break-outs arrays for display
+    const breakInsFormatted = (Array.isArray(record.break_starts) && record.break_starts.length > 0)
+      ? record.break_starts.filter(isTodayTimestamp).map(formatTime).join(", ")
+      : "-";
+
+    const breakOutsFormatted = (Array.isArray(record.break_ends) && record.break_ends.length > 0)
+      ? record.break_ends.filter(isTodayTimestamp).map(formatTime).join(", ")
+      : "-";
+
+    const totalBreakSeconds = calculateTotalBreakTime(record.break_starts, record.break_ends);
+
+    const cols = [
+      record.employee_id || "-",
+      record.employee || "-",
+      record.designation || "-",
+      record.position || "-",
+      formatTime(record.check_in),
+      formatTime(record.check_out),
+      breakInsFormatted,
+      breakOutsFormatted,
+      formatDuration(Math.floor(totalBreakSeconds)),
+      formatDuration(Math.floor((new Date(record.check_out) - new Date(record.check_in)) / 1000)),
+      calculateWorkingHours(record),
+    ];
+
+    const tr = document.createElement("tr");
+    cols.forEach(val => {
+      const td = document.createElement("td");
+      td.textContent = val;
+      tr.appendChild(td);
+    });
+
+    tbody.appendChild(tr);
+    hasData = true;
+  });
+
+  if (!hasData) {
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = 11;
+    td.textContent = "No attendance records for today.";
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+  }
+}
+
+  function loadInitialData() {
+    fetch('/api/dashboard-data/')
+      .then(res => res.json())
+      .then(json => {
+        const freshData = json.attendance || {};
+
+        // Convert single break_start and break_end values into arrays
+        Object.entries(freshData).forEach(([key, rec]) => {
+if (!Array.isArray(rec.break_starts)) {
+  if (rec.break_start) {
+    rec.break_starts = Array.isArray(rec.break_start) ? rec.break_start : [rec.break_start];
+  } else {
+    rec.break_starts = [];
+  }
+}
+
+if (!Array.isArray(rec.break_ends)) {
+  if (rec.break_end) {
+    rec.break_ends = Array.isArray(rec.break_end) ? rec.break_end : [rec.break_end];
+  } else {
+    rec.break_ends = [];
+  }
+}
+
+// Remove old single fields
+delete rec.break_start;
+delete rec.break_end;
+
+freshData[key] = rec;
+
+        });
+
+        Object.assign(attendanceData, freshData);
+        localStorage.setItem("attendanceData", JSON.stringify(attendanceData));
+        populateDesignationFilter();
+        updateTable();
+      })
+      .catch(err => console.error("Failed to fetch initial data:", err));
+  }
+
+  function connectWebSocket() {
+    const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+    const socket = new WebSocket(protocol + window.location.host + "/ws/admin-dashboard/");
+
+    socket.onmessage = function (event) {
+      try {
+        const data = JSON.parse(event.data);
+        const action = data.action;
+        const key = data.employee_id || data.employee;
+
+        const timestamp = (action === "break_start" || action === "break_end") ? data.time : data[action];
+        if (!isTodayTimestamp(timestamp)) return;
+
+        if (!attendanceData[key]) {
+          attendanceData[key] = {
+            employee: data.employee,
+            employee_id: data.employee_id,
+            designation: data.designation,
+            position: data.position,
+            check_in: null,
+            check_out: null,
+            break_starts: [],
+            break_ends: [],
+          };
+        }
+
+        const rec = attendanceData[key];
+
+        switch (action) {
+          case "check_in":
+            rec.check_in = data.check_in;
+            break;
+          case "check_out":
+            rec.check_out = data.check_out;
+            break;
+          case "break_start":
+            if (!rec.break_starts) rec.break_starts = [];
+            rec.break_starts.push(data.time);
+            break;
+          case "break_end":
+            if (!rec.break_ends) rec.break_ends = [];
+            rec.break_ends.push(data.time);
+            break;
+        }
+
+        localStorage.setItem("attendanceData", JSON.stringify(attendanceData));
+        populateDesignationFilter();
+        updateTable();
+      } catch (err) {
+        console.error("WebSocket error:", err);
+      }
+    };
+
+    socket.onclose = () => {
+      setTimeout(() => {
+        loadInitialData();  // Fetch missed data
+        connectWebSocket(); // Reconnect
+      }, 3000);
+    };
+
+    socket.onerror = (err) => {
+      console.error("WebSocket failure:", err);
+      socket.close();
+    };
+  }
+
+  populateDesignationFilter();
+  updateTable();
+
+  designationFilter.addEventListener("change", updateTable);
+  connectWebSocket();
+  loadInitialData(); // Load data on page load
+</script>
+</body>
+</html>

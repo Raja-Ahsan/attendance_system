@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Leave History</title>
+    <style>
+        :root { --brand:#004080; --brand-dark:#003366; --bg:#f4f6f8; --text:#333; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif;  background-image: radial-gradient(circle, #000227, #2E0043, rgb(2, 8, 21));; margin:0; color:var(--text);}
+        .page { padding:40px;}
+        h2 { color: white; margin-bottom:20px;}
+        label { color: white; }
+
+        form.filter { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:20px;}
+        select, button { padding:8px 12px; border-radius:6px; border:1px solid #ccc; }
+        button { background:var(--brand); color:#fff; border:none; cursor:pointer; font-weight:600;}
+        button:hover { background:var(--brand-dark); }
+
+        table { width:100%; border-collapse:collapse; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.1); border-radius:8px; overflow:hidden;}
+        thead { background:var(--brand); color:#fff;}
+        th,td { padding:12px 15px; border-bottom:1px solid #eee; text-align:left; }
+        tbody tr:hover { background:#e6f0ff;}
+        tbody tr:nth-child(even){background:#f9fbff;}
+
+        td:nth-child(4){ max-width:300px; white-space:normal; word-break:break-word;}
+
+        .status-Pending{color:#d9822b;font-weight:600;}
+        .status-Approved{color:#2e7d32;font-weight:600;}
+        .status-Rejected{color:#c62828;font-weight:600;}
+
+        .center-wrap {min-height:100vh;display:flex;align-items:center;justify-content:center;}
+        .filter-card {background:#fff;padding:28px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.1);max-width:520px;text-align:center;}
+        .filter-inline{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+        .helper{font-size:13px;color:#666;margin-top:8px;}
+    </style>
+</head>
+<body>
+    {% if not selected_year or not selected_month %}
+        <!-- First load: Centered selection -->
+        <div class="center-wrap">
+            <div class="filter-card">
+                <h3>Select Year and Month</h3>
+                <form class="filter" method="get" action="">
+                    <div class="filter-inline">
+                        <select name="year" required>
+                            <option value="">--Year--</option>
+                            {% for y in available_years %}
+                                <option value="{{ y }}" {% if selected_year == y|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
+                            {% endfor %}
+                        </select>
+                        <select name="month" required>
+                            <option value="">--Month--</option>
+                            <option value="1">January</option>
+                            <option value="2">February</option>
+                            <option value="3">March</option>
+                            <option value="4">April</option>
+                            <option value="5">May</option>
+                            <option value="6">June</option>
+                            <option value="7">July</option>
+                            <option value="8">August</option>
+                            <option value="9">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                        <button type="submit">Fetch</button>
+                    </div>
+                    <div class="helper">Choose year and month to see {{ employee.name }}'s leave history.</div>
+                </form>
+            </div>
+        </div>
+    {% else %}
+        <!-- After filter -->
+        <div class="page">
+            <h2>Leave History for {{ employee.name }}</h2>
+            <form class="filter" method="get" action="">
+                <label>Year:</label>
+                <select name="year" required>
+                    <option value="">--Year--</option>
+                    {% for y in available_years %}
+                        <option value="{{ y }}" {% if selected_year == y|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+                <label>Month:</label>
+                <select name="month" required>
+                    <option value="">--Month--</option>
+                    <option value="1" {% if selected_month == "1" %}selected{% endif %}>January</option>
+                    <option value="2" {% if selected_month == "2" %}selected{% endif %}>February</option>
+                    <option value="3" {% if selected_month == "3" %}selected{% endif %}>March</option>
+                    <option value="4" {% if selected_month == "4" %}selected{% endif %}>April</option>
+                    <option value="5" {% if selected_month == "5" %}selected{% endif %}>May</option>
+                    <option value="6" {% if selected_month == "6" %}selected{% endif %}>June</option>
+                    <option value="7" {% if selected_month == "7" %}selected{% endif %}>July</option>
+                    <option value="8" {% if selected_month == "8" %}selected{% endif %}>August</option>
+                    <option value="9" {% if selected_month == "9" %}selected{% endif %}>September</option>
+                    <option value="10" {% if selected_month == "10" %}selected{% endif %}>October</option>
+                    <option value="11" {% if selected_month == "11" %}selected{% endif %}>November</option>
+                    <option value="12" {% if selected_month == "12" %}selected{% endif %}>December</option>
+                </select>
+                <button type="submit">Fetch</button>
+            </form>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Requested On</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Reason</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for leave in leave_history %}
+                    <tr>
+                        <td>{{ leave.request_date|date:"F j, Y, g:i a" }}</td>
+                        <td>{{ leave.start_date|date:"M j, Y" }}</td>
+                        <td>{{ leave.end_date|date:"M j, Y" }}</td>
+                        <td>{{ leave.reason }}</td>
+                        <td class="status-{{ leave.status }}">{{ leave.status }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="text-align:center; padding: 20px;">No leave history found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+</body>
+</html>
